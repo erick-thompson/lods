@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using CallChecker.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -50,12 +52,32 @@ namespace CallChecker.Controllers
         // POST api/values
         [Route("{*url}")]
         [HttpPost]
-        public void Post([FromBody] string value)
+        public ActionResult Post()
         {
+            try
+            {
+                var sr = new StreamReader(_httpContextAccessor.HttpContext.Request.Body);
+                var body = sr.ReadToEnd();
+
+                var webhook = Newtonsoft.Json.JsonConvert.DeserializeObject<AzureEventGridWebHookValidation[]>(body);
+                if (webhook != null && !string.IsNullOrEmpty(webhook[0].data.validationCode))
+                {
+                    return new JsonResult(new
+                    {
+                        validationResponse = webhook[0].data.validationCode
+                    });
+                }
+            }
+            catch (Exception)
+            {
+                // eat the exception
+            }
+
             var path = _httpContextAccessor.HttpContext.Request.Path.Value;
             var requests = _requests.GetOrAdd("POST", verb => new List<string>());
             requests.Add(path);
 
+            return new EmptyResult();
         }
 
         // PUT api/values/5
