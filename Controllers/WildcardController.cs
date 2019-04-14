@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using CallChecker.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 
 namespace CallChecker.Controllers
 {
@@ -27,14 +28,26 @@ namespace CallChecker.Controllers
         [HttpGet]
         public ActionResult<IEnumerable<string>> GetCalls()
         {
-
-            var groupedRequests = _requests.Select(v => new
+            var requestsByVerb = _requests.Select(v => new
             {
                 verb = v.Key,
                 entries = v.Value.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count())
             });
-            
-            return new JsonResult(groupedRequests);
+
+            var totalPathCounts = _requests.SelectMany(x => x.Value).GroupBy(x => x).Select(x => new
+            {
+                path = x.Key,
+                count = x.Count()
+            });
+
+            return new JsonResult(new
+            {
+                requestsByVerb,
+                pathCounts = totalPathCounts,
+            }, new JsonSerializerSettings
+            {
+                Formatting = Formatting.Indented
+            }); 
         }
 
         // GET api/values
