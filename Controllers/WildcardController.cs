@@ -34,12 +34,7 @@ namespace CallChecker.Controllers
                 entries = v.Value.GroupBy(x => x).ToDictionary(g => g.Key, g => g.Count())
             });
 
-            var totalPathCounts = _requests.SelectMany(x => x.Value).GroupBy(x => x).Select(x => new
-            {
-                path = x.Key,
-                count = x.Count()
-            });
-
+            var totalPathCounts = _requests.SelectMany(x => x.Value).GroupBy(x => x).ToDictionary(x => x.Key, x => x.Count());
             return new JsonResult(new
             {
                 requestsByVerb,
